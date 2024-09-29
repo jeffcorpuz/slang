@@ -73,31 +73,24 @@ def identify_slang(term):
     return best_match
 
 def translate_sentence(sentence):
-    words = re.findall(r'\b\w+\b|\S+', sentence)
+    words = re.findall(r'\b\w+\b|\S+', sentence.lower())
     translated_words = []
+    slang_translations = {}
     for word in words:
         slang_match = identify_slang(word)
         if slang_match:
-            translated_words.append(f"{word} ({reverse_lookup[slang_match]})")
+            definition = reverse_lookup[slang_match]
+            translated_words.append(f"{word} ({definition})")
+            slang_translations[word] = definition
         else:
             translated_words.append(word)
-    return ' '.join(translated_words)
+    return ' '.join(translated_words), slang_translations
 
 @app.route('/translate')
 def translate():
     text = request.args.get('text', '').lower()
-    translated_text = translate_sentence(text)
-    original_words = text.split()
-    translated_words = translated_text.split()
+    translated_text, slang_translations = translate_sentence(text)
     
-    slang_translations = {}
-    for original, translated in zip(original_words, translated_words):
-        if '(' in translated:
-            slang_term, definition = translated.split('(')
-            slang_term = slang_term.strip()
-            definition = definition.rstrip(')')
-            slang_translations[slang_term] = definition
-
     return jsonify({
         'original_text': text,
         'translated_text': translated_text,
