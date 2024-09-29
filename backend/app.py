@@ -2,6 +2,7 @@ import json
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import difflib
+import re
 
 app = Flask(__name__)
 CORS(app)
@@ -53,53 +54,55 @@ def load_slang_database():
 slang_database = load_slang_database()
 trie = Trie()
 
+# Create a reverse lookup dictionary for quick definition access
+reverse_lookup = {}
+
 for generation, terms in slang_database.items():
-    for term in terms:
+    for term, definition in terms.items():
         trie.insert(term.lower(), term)
+        reverse_lookup[term.lower()] = definition
 
 def identify_slang(term):
     best_match = None
     best_ratio = 0
-    best_generation = None
+    for slang in reverse_lookup.keys():
+        ratio = difflib.SequenceMatcher(None, term.lower(), slang).ratio()
+        if ratio > best_ratio and ratio > 0.8:  # Increased threshold for sentence translation
+            best_ratio = ratio
+            best_match = slang
+    return best_match
 
-    for generation, slang_dict in slang_database.items():
-        for slang, definition in slang_dict.items():
-            ratio = difflib.SequenceMatcher(None, term.lower(), slang.lower()).ratio()
-            if ratio > best_ratio and ratio > 0.6:  # Adjust the threshold as needed
-                best_ratio = ratio
-                best_match = slang
-                best_generation = generation
-
-    if best_match:
-        return best_generation, slang_database[best_generation][best_match], best_match
-    return None, None, None
-
-def find_equivalents(term):
-    equivalents = {}
-    target_gen, target_definition, matched_term = identify_slang(term)
-    if target_gen:
-        for gen, slang_dict in slang_database.items():
-            if gen != target_gen:
-                for slang, definition in slang_dict.items():
-                    if definition.lower() == target_definition.lower():
-                        equivalents[gen] = slang
-    return equivalents, matched_term
+def translate_sentence(sentence):
+    words = re.findall(r'\b\w+\b|\S+', sentence)
+    translated_words = []
+    for word in words:
+        slang_match = identify_slang(word)
+        if slang_match:
+            translated_words.append(f"{word} ({reverse_lookup[slang_match]})")
+        else:
+            translated_words.append(word)
+    return ' '.join(translated_words)
 
 @app.route('/translate')
 def translate():
-    term = request.args.get('term', '').lower()
-    generation, definition, matched_term = identify_slang(term)
-    if generation:
-        equivalents, matched_term = find_equivalents(term)
-        return jsonify({
-            'term': matched_term,
-            'original_term': term,
-            'generation': generation,
-            'definition': definition,
-            'equivalents': equivalents
-        })
-    else:
-        return jsonify({'error': 'Slang term not found in the database'}), 404
+    text = request.args.get('text', '').lower()
+    translated_text = translate_sentence(text)
+    original_words = text.split()
+    translated_words = translated_text.split()
+    
+    slang_translations = {}
+    for original, translated in zip(original_words, translated_words):
+        if '(' in translated:
+            slang_term, definition = translated.split('(')
+            slang_term = slang_term.strip()
+            definition = definition.rstrip(')')
+            slang_translations[slang_term] = definition
+
+    return jsonify({
+        'original_text': text,
+        'translated_text': translated_text,
+        'slang_translations': slang_translations
+    })
 
 @app.route('/autocomplete')
 def autocomplete():

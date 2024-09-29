@@ -8,9 +8,9 @@ const App: React.FC = () => {
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5555';
 
-  const handleSearch = async (term: string) => {
+  const handleSearch = async (text: string) => {
     try {
-      const response = await axios.get(`${API_URL}/translate?term=${term}`);
+      const response = await axios.get(`${API_URL}/translate?text=${encodeURIComponent(text)}`);
       setResult(response.data);
     } catch (error) {
       console.error('Error fetching translation:', error);

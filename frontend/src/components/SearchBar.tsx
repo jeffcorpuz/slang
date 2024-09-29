@@ -5,21 +5,22 @@ import { Button } from "@/components/ui/button"
 import axios from 'axios';
 
 interface SearchBarProps {
-  onSearch: (term: string) => void;
+  onSearch: (text: string) => void;
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
-  const [term, setTerm] = useState('');
+  const [text, setText] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const fetchSuggestions = async () => {
-      if (term.length > 1) {
+      const lastWord = text.split(' ').pop() || '';
+      if (lastWord.length > 1) {
         try {
           const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5555';
-          const response = await axios.get(`${API_URL}/autocomplete?prefix=${term}`);
+          const response = await axios.get(`${API_URL}/autocomplete?prefix=${lastWord}`);
           setSuggestions(response.data);
           setShowSuggestions(true);
         } catch (error) {
@@ -32,17 +33,19 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
     };
 
     fetchSuggestions();
-  }, [term]);
+  }, [text]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSearch(term);
+    onSearch(text);
     setShowSuggestions(false);
   };
 
   const handleSuggestionClick = (suggestion: string) => {
-    setTerm(suggestion);
-    onSearch(suggestion);
+    const words = text.split(' ');
+    words[words.length - 1] = suggestion;
+    const newText = words.join(' ');
+    setText(newText);
     setShowSuggestions(false);
   };
 
@@ -56,9 +59,9 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
       <form onSubmit={handleSubmit} className="flex items-center space-x-2">
         <Input
           type="text"
-          placeholder="Enter slang term"
-          value={term}
-          onChange={(e) => setTerm(e.target.value)}
+          placeholder="Enter slang or sentence"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
           ref={inputRef}
         />
         <Button type="submit">Translate</Button>
