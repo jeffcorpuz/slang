@@ -4,7 +4,7 @@ This application consists of a React frontend and a Flask backend for translatin
 
 ## Prerequisites
 
-- Node.js (v14 or later)
+- Node.js (v18 or later)
 - Python (v3.7 or later)
 - pip (Python package manager)
 
