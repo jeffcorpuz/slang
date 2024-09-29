@@ -7,7 +7,7 @@ interface ResultDisplayProps {
   result: {
     original_text: string;
     translated_text: string;
-    slang_translations: Record<string, string>;
+    slang_translations: Record<string, { definition: string; generation: string }>;
   } | null;
 }
 
@@ -50,13 +50,15 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ result }) => {
                   <TableRow>
                     <TableHead>Slang Term</TableHead>
                     <TableHead>Definition</TableHead>
+                    <TableHead>Generation</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {Object.entries(result.slang_translations).map(([slang, definition]) => (
+                  {Object.entries(result.slang_translations).map(([slang, info]) => (
                     <TableRow key={slang}>
                       <TableCell className="font-medium">{slang}</TableCell>
-                      <TableCell>{definition}</TableCell>
+                      <TableCell>{info.definition}</TableCell>
+                      <TableCell>{info.generation}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

@@ -49,7 +49,8 @@ class Trie:
 
 def load_slang_database():
     with open('slang_database.json', 'r') as file:
-        return json.load(file)
+        data = json.load(file)
+    return {term.lower(): (definition, generation) for generation, terms in data.items() for term, definition in terms.items()}
 
 slang_database = load_slang_database()
 trie = Trie()
@@ -57,15 +58,14 @@ trie = Trie()
 # Create a reverse lookup dictionary for quick definition access
 reverse_lookup = {}
 
-for generation, terms in slang_database.items():
-    for term, definition in terms.items():
-        trie.insert(term.lower(), term)
-        reverse_lookup[term.lower()] = definition
+for term, (definition, generation) in slang_database.items():
+    trie.insert(term.lower(), term)
+    reverse_lookup[term.lower()] = (definition, generation)
 
 def identify_slang(term):
     best_match = None
     best_ratio = 0
-    for slang in reverse_lookup.keys():
+    for slang in slang_database.keys():
         ratio = difflib.SequenceMatcher(None, term.lower(), slang).ratio()
         if ratio > best_ratio and ratio > 0.8:  # Increased threshold for sentence translation
             best_ratio = ratio
@@ -77,11 +77,10 @@ def translate_sentence(sentence):
     translated_words = []
     slang_translations = {}
     for word in words:
-        slang_match = identify_slang(word)
-        if slang_match:
-            definition = reverse_lookup[slang_match]
+        if word in slang_database:
+            definition, generation = slang_database[word]
             translated_words.append(f"{word} ({definition})")
-            slang_translations[word] = definition
+            slang_translations[word] = {"definition": definition, "generation": generation}
         else:
             translated_words.append(word)
     return ' '.join(translated_words), slang_translations
