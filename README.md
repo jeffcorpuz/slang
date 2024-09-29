@@ -56,6 +56,30 @@ This application consists of a React frontend and a Flask backend for translatin
 
 Open your web browser and go to `http://localhost:5173` to use the Slang Translator application.
 
+## Running with Docker Compose
+
+To run the application using Docker Compose:
+
+1. Make sure you have Docker and Docker Compose installed on your system.
+
+2. Navigate to the root directory of the project (where the `docker-compose.yml` file is located).
+
+3. Build and start the containers:
+   ```
+   docker-compose up --build
+   ```
+
+4. Once the containers are up and running, you can access the application:
+   - Frontend: http://localhost:5173
+   - Backend API: http://localhost:5555
+
+5. To stop the application, press `Ctrl + C` in the terminal where docker-compose is running, or run:
+   ```
+   docker-compose down
+   ```
+
+This method will start both the frontend and backend services in containers, making it easy to run the entire application stack with a single command.
+
 ## Stopping the Application
 
 To stop the application:
